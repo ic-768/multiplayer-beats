@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
 export function JoinRoomForm() {
@@ -6,7 +6,7 @@ export function JoinRoomForm() {
   const [playerName, setPlayerName] = useState("");
   const [roomId, setRoomId] = useState("");
 
-  const handleJoin = (e: React.FormEvent) => {
+  const handleJoin = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!playerName.trim() || !roomId.trim()) return;
 

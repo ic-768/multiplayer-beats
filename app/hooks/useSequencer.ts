@@ -38,17 +38,22 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
   });
 
   /**
-   * Toggle a step on/off.
+   * Update a specific step.
    * @param instrumentIndex - Which instrument row (0-3)
    * @param stepIndex - Which step in the pattern (0-15)
+   * @param updater - Function to update the step
    */
-  const toggleStep = useCallback(
-    (instrumentIndex: number, stepIndex: number) => {
+  const editStep = useCallback(
+    (
+      instrumentIndex: number,
+      stepIndex: number,
+      updater: (step: Step) => Step,
+    ) => {
       setState((prev) => {
         const newSteps = prev.steps.map((instrumentSteps, i) =>
           i === instrumentIndex
             ? instrumentSteps.map((step, j) =>
-                j === stepIndex ? { ...step, active: !step.active } : step,
+                j === stepIndex ? updater(step) : step,
               )
             : instrumentSteps,
         );
@@ -59,6 +64,21 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
   );
 
   /**
+   * Toggle a step on/off.
+   * @param instrumentIndex - Which instrument row (0-3)
+   * @param stepIndex - Which step in the pattern (0-15)
+   */
+  const toggleStep = useCallback(
+    (instrumentIndex: number, stepIndex: number) => {
+      editStep(instrumentIndex, stepIndex, (step) => ({
+        ...step,
+        active: !step.active,
+      }));
+    },
+    [editStep],
+  );
+
+  /**
    * Set the velocity (volume) of a specific step.
    * @param instrumentIndex - Which instrument row
    * @param stepIndex - Which step
@@ -66,20 +86,12 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
    */
   const setStepVelocity = useCallback(
     (instrumentIndex: number, stepIndex: number, velocity: number) => {
-      setState((prev) => {
-        const newSteps = prev.steps.map((instrumentSteps, i) =>
-          i === instrumentIndex
-            ? instrumentSteps.map((step, j) =>
-                j === stepIndex
-                  ? { ...step, velocity: Math.max(0, Math.min(1, velocity)) }
-                  : step,
-              )
-            : instrumentSteps,
-        );
-        return { ...prev, steps: newSteps };
-      });
+      editStep(instrumentIndex, stepIndex, (step) => ({
+        ...step,
+        velocity: Math.max(0, Math.min(1, velocity)),
+      }));
     },
-    [],
+    [editStep],
   );
 
   /**

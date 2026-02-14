@@ -43,7 +43,7 @@ export function useAudioEngine() {
   // =============================================================================
 
   /** The Web Audio context - persists across renders but doesn't cause re-renders */
-  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioContextRef = useRef<AudioContext>(null);
 
   /** When the next note should play (in AudioContext time) */
   const nextNoteTimeRef = useRef<number>(0);
@@ -52,7 +52,7 @@ export function useAudioEngine() {
   const currentStepRef = useRef<number>(0);
 
   /** ID of the setTimeout used for the lookahead scheduler */
-  const timerIDRef = useRef<number | null>(null);
+  const timerIDRef = useRef<number>(null);
 
   /** How often to run the scheduler (milliseconds) - lower = more responsive */
   const lookaheadRef = useRef<number>(25);
@@ -64,7 +64,7 @@ export function useAudioEngine() {
   const buffersRef = useRef<Map<string, AudioBuffer>>(new Map());
 
   /** Callback invoked on each step - used to trigger UI updates and play sounds */
-  const onStepCallbackRef = useRef<((step: number) => void) | null>(null);
+  const onStepCallbackRef = useRef<(step: number) => void>(null);
 
   /** Store scheduler function in a ref so it can call itself recursively */
   const schedulerRef = useRef<() => void>(() => {});

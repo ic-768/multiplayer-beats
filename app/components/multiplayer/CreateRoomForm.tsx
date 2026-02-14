@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
 export function CreateRoomForm() {
   const navigate = useNavigate();
   const [playerName, setPlayerName] = useState("");
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!playerName.trim()) return;
 
