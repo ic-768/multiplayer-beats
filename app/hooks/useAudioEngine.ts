@@ -136,15 +136,8 @@ export function useAudioEngine() {
         if (onStepRef.current) onStepRef.current(currentStepVal);
         // Trigger a sound for each active note at this step
         getNotes(currentStepVal).forEach(({ instrument, velocity }) => {
-          // Try to play sample first, fall back to synthesized drum
           if (buf.current.has(instrument.id)) {
             playSampleAt(instrument.id, next.current, velocity);
-          } else {
-            const s = DRUM_SOUNDS[instrument.id] || {
-              frequency: 440,
-              duration: 0.1,
-            };
-            playToneAt(s.frequency, s.duration, next.current, velocity);
           }
         });
         // Advance to the next sixteenth-note
@@ -154,7 +147,7 @@ export function useAudioEngine() {
       // Re-invoke the scheduler after a short delay
       timer.current = window.setTimeout(sched.current, AUDIO_CONFIG.LOOKAHEAD);
     },
-    [state.bpm, playToneAt, playSampleAt],
+    [state.bpm, playSampleAt],
   );
 
   // Start playback from the current audio time, kicking off the scheduler loop
