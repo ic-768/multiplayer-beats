@@ -4,7 +4,7 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 
 ## Summary of Changes
 
-### New Files Created (16 files)
+### New Files Created (15 files)
 
 #### Core Types
 
@@ -22,9 +22,8 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 
 **`app/utils/audio.ts`**
 
-- `AUDIO_CONFIG`: Constants for lookahead scheduling (25ms interval, 0.1s schedule-ahead), BPM range (60-180)
-- `createAudioContext()`: Cross-browser AudioContext creation with Safari webkit prefix support
-- `createDrumSound()`: Synthesizes drum sounds with oscillator and gain envelope (attack/decay)
+- `AUDIO_CONFIG`: Constants for lookahead scheduling (25ms interval, 0.1s schedule-ahead), BPM range (60-180), default BPM (120)
+- `DRUM_SAMPLES`: URLs for audio samples (kick, snare, hihat, clap) loaded from Tone.js and GitHub
 
 **`app/utils/sequencer.ts`**
 
@@ -35,17 +34,20 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 **`app/store/sequencer.ts`**
 
 - Zustand store for sequencer state
+- Methods: toggleStep, setStepVelocity, clearPattern, BPM management
+- Note: setStepVelocity and totalSteps are implemented but not yet connected to UI
 
 #### Custom Hooks
 
 **`app/hooks/useAudioSequencer.ts`**
 Combined audio engine and sequencer hook:
 
-- AudioContext initialization and sample loading
+- AudioContext initialization and sample loading (from `DRUM_SAMPLES` URLs)
 - Lookahead scheduler for precise playback timing
 - Sequencer state management (grid, steps, notes)
 - Transport controls: start(), stop(), pause()
 - BPM and step management
+- Generic `playToneAt()` for synthesized tones (fallback)
 
 **`app/hooks/useTurnManager.ts`**
 Turn-based game logic hook providing:
@@ -60,7 +62,7 @@ Turn-based game logic hook providing:
 
 **`app/components/sequencer/Step.tsx`**
 
-- Individual grid cell component
+- Individual grid cell component (exports `StepComponent`)
 - Visual states: inactive (gray), active (instrument color with velocity opacity)
 - Current step highlight (white ring)
 - Click handler for toggling notes
@@ -79,7 +81,8 @@ Turn-based game logic hook providing:
 
 **`app/components/sequencer/Transport.tsx`**
 
-- Playback controls: Play/Pause toggle, Stop button
+- Play and Pause buttons (separate controls)
+- Stop button
 - BPM input field (60-180 range)
 - Clear pattern button
 - Styled with Tailwind CSS
@@ -119,7 +122,7 @@ Turn-based game logic hook providing:
 - URL parameters: `roomId` (path), `player` (query)
 - Features:
   - Audio initialization on first Play click
-  - Synthesized drum playback using `playTone()`
+  - Sample-based drum playback via AudioBuffers
   - Turn controls (Start Turn, End Early, Reset)
   - Instructions panel
 
@@ -149,20 +152,23 @@ export default [
 
 ## Architecture Decisions
 
+### Technology Stack
+
+- **React Router v7**: File-based routing with dynamic room routes
+- **Zustand**: Lightweight state management for sequencer state
+- **Tailwind CSS v4**: Utility-first styling with responsive breakpoints
+- **Web Audio API**: Low-latency audio playback with lookahead scheduling
+
 ### Audio Engine
 
 - **Lookahead Scheduler Pattern**: Instead of using `setInterval` for playback timing (which is imprecise), we use the Web Audio API's high-resolution clock. The scheduler runs every 25ms and schedules notes 100ms ahead, ensuring rock-solid timing even under load.
-- **Synthesized Sounds**: To avoid external dependencies on audio files, drum sounds are synthesized using oscillators:
-  - Kick: 60Hz sine wave, 0.5s decay
-  - Snare: 200Hz, 0.3s decay
-  - Hi-hat: 800Hz, 0.1s decay (high frequency noise approximation)
-  - Clap: 150Hz, 0.2s decay
-- **Graceful Degradation**: The `loadSample()` function is available for loading real drum samples when they're available.
+- **Sample-Based Playback**: Drum sounds are loaded from external URLs (Tone.js drum samples). The `loadSample()` function fetches and decodes audio files into AudioBuffers for low-latency playback.
+- **Synthesizer Fallback**: The `playToneAt()` function provides a generic sawtooth oscillator for basic tone generation if samples fail to load.
 
 ### Utility Modules
 
-- **Separation of Concerns**: Audio configuration, context creation, and drum sound definitions are extracted to dedicated utility modules for reusability and testability.
-- **DRUM_SOUNDS Constant**: Centralized mapping of instrument IDs to frequencies and durations for consistent sound generation.
+- **Separation of Concerns**: Audio configuration, sample URLs, and context creation are extracted to dedicated utility modules for reusability and testability.
+- **DRUM_SAMPLES Constant**: Centralized mapping of instrument IDs to sample URLs for consistent audio loading.
 
 ### State Management
 
@@ -198,6 +204,7 @@ export default [
    - Click "Start Turn" to begin 60-second countdown
    - Watch timer change colors as it counts down
    - Try "End Turn Early" to switch players
+   - Use "Leave Room" to return to home
 
 5. Join from another browser tab:
    - Copy the room code from the URL
@@ -214,18 +221,25 @@ npm run typecheck
 
 ## Next Steps (Phase 2)
 
-- Pattern management (undo/redo, pattern history)
-- Velocity controls in the UI
-- Extended patterns (32/64 steps)
-- Visual playhead improvements
-- Better synthesized drum sounds (noise buffers for snare/hat)
+- Real-time multiplayer sync (WebSocket/Server-Sent Events)
+- Pattern management (save/load patterns)
+- Visual playhead improvements (smooth animation, better highlight)
+- Room persistence and player management
 
 ## Code Quality
 
 - ✅ TypeScript strict mode compatible
-- ✅ ESLint passing
 - ✅ React hooks rules followed
-- ✅ No console errors
+- ✅ No console errors (warnings only for sample loading failures)
 - ✅ Responsive design
 - ✅ Accessible button labels
 - ✅ All files under 150 lines
+
+## Known Limitations
+
+- No velocity UI control (stored but not adjustable in UI)
+- No pattern undo/redo
+- Extended patterns (32/64 steps) not supported
+- No visual playhead improvements beyond current step highlight
+- Real-time multiplayer sync not yet implemented (Phase 3)
+- `createInitialSteps()` in utils/sequencer.ts is unused (store has its own)
