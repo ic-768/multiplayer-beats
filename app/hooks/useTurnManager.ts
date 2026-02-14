@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { TurnState } from "~/types";
 
@@ -35,24 +35,24 @@ export function useTurnManager({
   const currentPlayerRef = useRef<1 | 2>(1);
 
   // Start a new turn - resets timer and activates
-  const startTurn = useCallback(() => {
+  function startTurn() {
     setState((prev) => ({
       ...prev,
       isActive: true,
       timeRemaining: duration,
     }));
-  }, [duration]);
+  }
 
   // Pause the current turn (timer stops but state is preserved)
-  const pauseTurn = useCallback(() => {
+  function pauseTurn() {
     setState((prev) => ({
       ...prev,
       isActive: false,
     }));
-  }, []);
+  }
 
   // End the current turn manually or automatically
-  const endTurn = useCallback(() => {
+  function endTurn() {
     // Clear the timer
     if (timerIdRef.current) {
       clearInterval(timerIdRef.current);
@@ -77,10 +77,10 @@ export function useTurnManager({
         round: nextRound,
       };
     });
-  }, [duration, onTurnEnd]);
+  }
 
   // Reset everything to initial state
-  const resetGame = useCallback(() => {
+  function resetGame() {
     if (timerIdRef.current) {
       clearInterval(timerIdRef.current);
       timerIdRef.current = null;
@@ -92,7 +92,7 @@ export function useTurnManager({
       isActive: false,
       round: 1,
     });
-  }, [duration]);
+  }
 
   // Timer effect - runs when turn is active
   useEffect(() => {

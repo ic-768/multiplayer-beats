@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 
 import { TurnControls } from "~/components/multiplayer/TurnControls";
@@ -33,7 +33,7 @@ export default function Room() {
 
   // Sync audio engine step with sequencer UI
   useEffect(() => {
-    audio.setOnStep((step) => {
+    audio.setOnStep((step: number) => {
       sequencer.setCurrentStep(step);
     });
   }, [audio, sequencer]);
@@ -47,38 +47,35 @@ export default function Room() {
     }
   }, [audio, sequencer, audio.isPlaying, sequencer.getActiveNotesForStep]);
 
-  const initAudio = useCallback(async () => {
+  async function initAudio() {
     if (!audioInitialized) {
       await audio.init();
       setAudioInitialized(true);
     }
-  }, [audio, audioInitialized]);
+  }
 
-  const handlePlay = useCallback(async () => {
+  async function handlePlay() {
     await initAudio();
     audio.setBpm(sequencer.bpm);
     sequencer.setIsPlaying(true);
-    audio.start((step) => sequencer.getActiveNotesForStep(step));
-  }, [initAudio, audio, sequencer]);
+    audio.start((step: number) => sequencer.getActiveNotesForStep(step));
+  }
 
-  const handlePause = useCallback(() => {
+  function handlePause() {
     sequencer.setIsPlaying(false);
     audio.pause();
-  }, [sequencer, audio]);
+  }
 
-  const handleStop = useCallback(() => {
+  function handleStop() {
     sequencer.setIsPlaying(false);
     sequencer.setCurrentStep(0);
     audio.stop();
-  }, [sequencer, audio]);
+  }
 
-  const handleBpmChange = useCallback(
-    (bpm: number) => {
-      sequencer.setBpm(bpm);
-      audio.setBpm(bpm);
-    },
-    [sequencer, audio],
-  );
+  function handleBpmChange(bpm: number) {
+    sequencer.setBpm(bpm);
+    audio.setBpm(bpm);
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 p-4">

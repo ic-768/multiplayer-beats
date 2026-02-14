@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 
 import type { Instrument, SequencerState, Step } from "~/types";
 
@@ -28,91 +28,83 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
   });
 
   /** Update a specific step. */
-  const editStep = useCallback(
-    (
-      instrumentIndex: number,
-      stepIndex: number,
-      updater: (step: Step) => Step,
-    ) => {
-      setState((prev) => {
-        const newSteps = prev.steps.map((instrumentSteps, i) =>
-          i === instrumentIndex
-            ? instrumentSteps.map((step, j) =>
-                j === stepIndex ? updater(step) : step,
-              )
-            : instrumentSteps,
-        );
-        return { ...prev, steps: newSteps };
-      });
-    },
-    [],
-  );
+  function editStep(
+    instrumentIndex: number,
+    stepIndex: number,
+    updater: (step: Step) => Step,
+  ) {
+    setState((prev) => {
+      const newSteps = prev.steps.map((instrumentSteps, i) =>
+        i === instrumentIndex
+          ? instrumentSteps.map((step, j) =>
+              j === stepIndex ? updater(step) : step,
+            )
+          : instrumentSteps,
+      );
+      return { ...prev, steps: newSteps };
+    });
+  }
 
   /** Toggle a step on/off. */
-  const toggleStep = useCallback(
-    (instrumentIndex: number, stepIndex: number) => {
-      editStep(instrumentIndex, stepIndex, (step) => ({
-        ...step,
-        active: !step.active,
-      }));
-    },
-    [editStep],
-  );
+  function toggleStep(instrumentIndex: number, stepIndex: number) {
+    editStep(instrumentIndex, stepIndex, (step) => ({
+      ...step,
+      active: !step.active,
+    }));
+  }
 
   /** Set the velocity (volume) of a specific step. */
-  const setStepVelocity = useCallback(
-    (instrumentIndex: number, stepIndex: number, velocity: number) => {
-      editStep(instrumentIndex, stepIndex, (step) => ({
-        ...step,
-        velocity: Math.max(0, Math.min(1, velocity)),
-      }));
-    },
-    [editStep],
-  );
+  function setStepVelocity(
+    instrumentIndex: number,
+    stepIndex: number,
+    velocity: number,
+  ) {
+    editStep(instrumentIndex, stepIndex, (step) => ({
+      ...step,
+      velocity: Math.max(0, Math.min(1, velocity)),
+    }));
+  }
 
   /** Clear all steps - reset the entire pattern to empty. */
-  const clearPattern = useCallback(() => {
+  function clearPattern() {
     setState((prev) => ({
       ...prev,
       steps: createInitialSteps(instruments, steps),
     }));
-  }, [instruments, steps]);
+  }
 
   /** Update the current playback position (called by audio engine). */
-  const setCurrentStep = useCallback((step: number) => {
+  function setCurrentStep(step: number) {
     setState((prev) => ({ ...prev, currentStep: step }));
-  }, []);
+  }
 
   /** Update playing state */
-  const setIsPlaying = useCallback((isPlaying: boolean) => {
+  function setIsPlaying(isPlaying: boolean) {
     setState((prev) => ({ ...prev, isPlaying }));
-  }, []);
+  }
 
   /** Update BPM (beats per minute) */
-  const setBpm = useCallback((bpm: number) => {
+  function setBpm(bpm: number) {
     setState((prev) => ({ ...prev, bpm: Math.max(60, Math.min(180, bpm)) }));
-  }, []);
+  }
 
   /** Get all active notes for a given step position. Used by audio engine. */
-  const getActiveNotesForStep = useCallback(
-    (
-      stepIndex: number,
-    ): { instrument: Instrument; velocity: number; index: number }[] => {
-      return state.steps
-        .map((instrumentSteps, index) => ({
-          instrument: instruments[index],
-          step: instrumentSteps[stepIndex],
-          index,
-        }))
-        .filter(({ step }) => step.active)
-        .map(({ instrument, step, index }) => ({
-          instrument,
-          velocity: step.velocity,
-          index,
-        }));
-    },
-    [state.steps, instruments],
-  );
+  function getActiveNotesForStep(
+    stepIndex: number,
+  ): { instrument: Instrument; velocity: number; index: number }[] {
+    return state.steps
+      .map((instrumentSteps, index) => ({
+        instrument: instruments[index],
+        step: instrumentSteps[stepIndex],
+        index,
+      }))
+      .filter(({ step }) => step.active)
+      .map(({ instrument, step, index }) => ({
+        instrument,
+        velocity: step.velocity,
+        index,
+      }));
+  }
 
   return {
     ...state,
