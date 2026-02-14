@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 
+import { TurnControls } from "~/components/multiplayer/TurnControls";
 import { TurnTimer } from "~/components/multiplayer/TurnTimer";
 import { Grid } from "~/components/sequencer/Grid";
 import { Transport } from "~/components/sequencer/Transport";
 import { useAudioEngine } from "~/hooks/useAudioEngine";
 import { useSequencer } from "~/hooks/useSequencer";
+import { useStepCallback } from "~/hooks/useStepCallback";
 import { useTurnManager } from "~/hooks/useTurnManager";
 import { DEFAULT_INSTRUMENTS } from "~/types";
 
@@ -30,18 +32,15 @@ export default function Room() {
   });
   const turn = useTurnManager({ duration: 60 });
 
-  // Initialize audio on first user interaction
+  useStepCallback({ audio, sequencer });
+
   const initAudio = useCallback(async () => {
     if (!audioInitialized) {
       await audio.init();
       setAudioInitialized(true);
-
-      // Load synthesized drum sounds as a fallback
-      // These are simple synthesized sounds so we don't need external files
     }
   }, [audio, audioInitialized]);
 
-  // Handle transport controls
   const handlePlay = useCallback(async () => {
     await initAudio();
     audio.setBpm(sequencer.bpm);
@@ -68,41 +67,9 @@ export default function Room() {
     [sequencer, audio],
   );
 
-  // Sync audio step with sequencer
-  useEffect(() => {
-    audio.setOnStepCallback((step) => {
-      sequencer.setCurrentStep(step);
-
-      // Play active notes for this step
-      const activeNotes = sequencer.getActiveNotesForStep(step);
-      activeNotes.forEach(({ instrument, velocity }) => {
-        // Use synthesized sounds based on instrument type
-        const frequencies: Record<string, number> = {
-          kick: 60,
-          snare: 200,
-          hihat: 800,
-          clap: 150,
-        };
-        const durations: Record<string, number> = {
-          kick: 0.5,
-          snare: 0.3,
-          hihat: 0.1,
-          clap: 0.2,
-        };
-
-        const freq = frequencies[instrument.id] || 440;
-        const duration = durations[instrument.id] || 0.1;
-
-        // Different waveforms for different drums
-        audio.playTone(freq, duration, velocity);
-      });
-    });
-  }, [audio, sequencer]);
-
   return (
     <div className="min-h-screen bg-gray-950 p-4">
       <div className="mx-auto max-w-6xl space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Room: {roomId}</h1>
@@ -116,7 +83,6 @@ export default function Room() {
           </a>
         </div>
 
-        {/* Turn Timer */}
         <TurnTimer
           timeRemaining={turn.timeRemaining}
           currentPlayer={turn.currentPlayer}
@@ -124,7 +90,6 @@ export default function Room() {
           round={turn.round}
         />
 
-        {/* Transport Controls */}
         <Transport
           isPlaying={sequencer.isPlaying}
           bpm={sequencer.bpm}
@@ -135,7 +100,6 @@ export default function Room() {
           onClear={sequencer.clearPattern}
         />
 
-        {/* Sequencer Grid */}
         <Grid
           instruments={sequencer.instruments}
           steps={sequencer.steps}
@@ -143,32 +107,13 @@ export default function Room() {
           onToggleStep={sequencer.toggleStep}
         />
 
-        {/* Turn Controls */}
-        <div className="flex gap-4">
-          {!turn.isActive ? (
-            <button
-              onClick={turn.startTurn}
-              className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-500"
-            >
-              Start Turn
-            </button>
-          ) : (
-            <button
-              onClick={turn.endTurn}
-              className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-500"
-            >
-              End Turn Early
-            </button>
-          )}
-          <button
-            onClick={turn.resetGame}
-            className="rounded-lg bg-gray-600 px-6 py-3 font-medium text-white transition-colors hover:bg-gray-500"
-          >
-            Reset Game
-          </button>
-        </div>
+        <TurnControls
+          isActive={turn.isActive}
+          onStart={turn.startTurn}
+          onEnd={turn.endTurn}
+          onReset={turn.resetGame}
+        />
 
-        {/* Instructions */}
         <div className="rounded-lg bg-gray-900 p-4 text-sm text-gray-400">
           <p className="mb-2 font-medium text-white">How to play:</p>
           <ul className="list-inside list-disc space-y-1">

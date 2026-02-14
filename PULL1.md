@@ -4,7 +4,7 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 
 ## Summary of Changes
 
-### New Files Created (11 files)
+### New Files Created (16 files)
 
 #### Core Types
 
@@ -17,6 +17,22 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 - `TurnState`: Current player (1 or 2), time remaining, active status, round number
 - `Player` & `RoomState`: Multiplayer session management
 - Default constants: `DEFAULT_INSTRUMENTS` (kick, snare, hihat, clap), `DEFAULT_STEPS = 16`, `TURN_DURATION = 60`
+
+#### Utilities
+
+**`app/utils/audio.ts`**
+
+- `AUDIO_CONFIG`: Constants for lookahead scheduling (25ms interval, 0.1s schedule-ahead), BPM range (60-180)
+- `createAudioContext()`: Cross-browser AudioContext creation with Safari webkit prefix support
+- `createDrumSound()`: Synthesizes drum sounds with oscillator and gain envelope (attack/decay)
+
+**`app/utils/sequencer.ts`**
+
+- `createInitialSteps()`: Creates empty step matrix for given instruments and step count
+
+**`app/utils/drums.ts`**
+
+- `DRUM_SOUNDS`: Frequency and duration mappings for kick, snare, hihat, clap
 
 #### Custom Hooks
 
@@ -49,6 +65,12 @@ Turn-based game logic hook providing:
 - Player alternation (Player 1 ↔ Player 2)
 - Round progression tracking
 - Manual turn controls: `startTurn()`, `endTurn()`, `pauseTurn()`, `resetGame()`
+
+**`app/hooks/useStepCallback.ts`**
+
+- Encapsulates audio step callback logic for syncing audio engine with sequencer
+- Maps instruments to frequencies and durations
+- Triggers synthesized tone playback on active steps
 
 #### UI Components
 
@@ -86,6 +108,12 @@ Turn-based game logic hook providing:
   - Green: >30s remaining
   - Yellow: 10-30s remaining
   - Red + pulse animation: <10s remaining
+
+**`app/components/multiplayer/TurnControls.tsx`**
+
+- Reusable turn control buttons
+- Start Turn (blue), End Turn Early (green), Reset Game (gray)
+- Conditional rendering based on turn active state
 
 **`app/components/multiplayer/CreateRoomForm.tsx`**
 
@@ -147,6 +175,11 @@ export default [
   - Clap: 150Hz, 0.2s decay
 - **Graceful Degradation**: The `loadSample()` function is available for loading real drum samples when they're available.
 
+### Utility Modules
+
+- **Separation of Concerns**: Audio configuration, context creation, and drum sound definitions are extracted to dedicated utility modules for reusability and testability.
+- **DRUM_SOUNDS Constant**: Centralized mapping of instrument IDs to frequencies and durations for consistent sound generation.
+
 ### State Management
 
 - **Separate Hooks**: Audio, sequencer, and turn logic are separated into focused hooks for better maintainability and testability.
@@ -156,6 +189,8 @@ export default [
 ### Component Structure
 
 - **Composition Pattern**: Grid → InstrumentRow → Step hierarchy allows for flexible layout changes
+- **Extracted Controls**: Turn controls extracted to dedicated `TurnControls` component for reusability
+- **Callback Hook**: Step callback logic encapsulated in `useStepCallback` hook to keep room.tsx clean
 - **Controlled Components**: All UI state is managed by hooks, making components pure and predictable
 - **Tailwind CSS**: Consistent styling using utility classes, responsive design with sm: prefixes
 
@@ -210,3 +245,4 @@ npm run typecheck
 - ✅ No console errors
 - ✅ Responsive design
 - ✅ Accessible button labels
+- ✅ All files under 150 lines

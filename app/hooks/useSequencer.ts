@@ -2,19 +2,13 @@ import { useCallback, useState } from "react";
 
 import type { Instrument, SequencerState, Step } from "~/types";
 
-/**
- * Configuration options for the sequencer hook.
- */
+/** Configuration options for the sequencer hook. */
 interface UseSequencerOptions {
-  /** List of instruments (determines number of rows) */
   instruments: Instrument[];
-  /** Number of steps in the pattern (default 16) */
   steps?: number;
 }
 
-/**
- * Creates an empty step matrix for the given instruments and step count.
- */
+/** Creates an empty step matrix for the given instruments and step count. */
 const createInitialSteps = (
   instruments: Instrument[],
   steps: number,
@@ -24,12 +18,8 @@ const createInitialSteps = (
   );
 };
 
-/**
- * Sequencer state management hook.
- * Handles the grid data (which steps are active), playback position, and tempo.
- */
+/** Sequencer state management hook. Handles grid data, playback position, and tempo. */
 export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
-  // Initialize state with empty steps
   const [state, setState] = useState<SequencerState>({
     steps: createInitialSteps(instruments, steps),
     currentStep: 0,
@@ -37,12 +27,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     bpm: 120,
   });
 
-  /**
-   * Update a specific step.
-   * @param instrumentIndex - Which instrument row (0-3)
-   * @param stepIndex - Which step in the pattern (0-15)
-   * @param updater - Function to update the step
-   */
+  /** Update a specific step. */
   const editStep = useCallback(
     (
       instrumentIndex: number,
@@ -63,11 +48,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     [],
   );
 
-  /**
-   * Toggle a step on/off.
-   * @param instrumentIndex - Which instrument row (0-3)
-   * @param stepIndex - Which step in the pattern (0-15)
-   */
+  /** Toggle a step on/off. */
   const toggleStep = useCallback(
     (instrumentIndex: number, stepIndex: number) => {
       editStep(instrumentIndex, stepIndex, (step) => ({
@@ -78,12 +59,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     [editStep],
   );
 
-  /**
-   * Set the velocity (volume) of a specific step.
-   * @param instrumentIndex - Which instrument row
-   * @param stepIndex - Which step
-   * @param velocity - Volume value (0-1)
-   */
+  /** Set the velocity (volume) of a specific step. */
   const setStepVelocity = useCallback(
     (instrumentIndex: number, stepIndex: number, velocity: number) => {
       editStep(instrumentIndex, stepIndex, (step) => ({
@@ -94,9 +70,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     [editStep],
   );
 
-  /**
-   * Clear all steps - reset the entire pattern to empty.
-   */
+  /** Clear all steps - reset the entire pattern to empty. */
   const clearPattern = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -104,9 +78,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     }));
   }, [instruments, steps]);
 
-  /**
-   * Update the current playback position (called by audio engine).
-   */
+  /** Update the current playback position (called by audio engine). */
   const setCurrentStep = useCallback((step: number) => {
     setState((prev) => ({ ...prev, currentStep: step }));
   }, []);
@@ -121,12 +93,7 @@ export function useSequencer({ instruments, steps = 16 }: UseSequencerOptions) {
     setState((prev) => ({ ...prev, bpm: Math.max(60, Math.min(180, bpm)) }));
   }, []);
 
-  /**
-   * Get all active notes for a given step position.
-   * Used by the audio engine to know what to play.
-   * @param stepIndex - The step number to query
-   * @returns Array of objects containing instrument, velocity, and instrument index
-   */
+  /** Get all active notes for a given step position. Used by audio engine. */
   const getActiveNotesForStep = useCallback(
     (
       stepIndex: number,
