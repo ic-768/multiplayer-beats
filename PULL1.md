@@ -30,32 +30,22 @@ This PR implements Phase 1 of the Multiplayer Beats roadmap, establishing the co
 
 - `createInitialSteps()`: Creates empty step matrix for given instruments and step count
 
-**`app/utils/drums.ts`**
+#### State Management
 
-- `DRUM_SOUNDS`: Frequency and duration mappings for kick, snare, hihat, clap
+**`app/store/sequencer.ts`**
+
+- Zustand store for sequencer state
 
 #### Custom Hooks
 
-**`app/hooks/useAudioEngine.ts`**
-Web Audio API management hook providing:
+**`app/hooks/useAudioSequencer.ts`**
+Combined audio engine and sequencer hook:
 
-- AudioContext initialization (with user gesture requirement handling)
-- Sample loading system for external audio files
-- **Synthesized drum sounds** as fallback (kick, snare, hi-hat, clap using oscillators)
-- **Precise audio scheduler** using lookahead pattern (25ms intervals, 100ms schedule-ahead)
-- Transport controls: `start()`, `stop()`, `pause()`
-- BPM management (60-180 range)
-- Step callback registration for sequencer sync
-
-**`app/hooks/useSequencer.ts`**
-Sequencer state management hook providing:
-
-- 16×4 grid initialization (16 steps × 4 instruments)
-- `toggleStep(instrumentIndex, stepIndex)`: Toggle note on/off
-- `setStepVelocity()`: Adjust note velocity (volume)
-- `clearPattern()`: Reset entire grid
-- `getActiveNotesForStep(stepIndex)`: Get all active notes for audio playback
-- BPM and playback state management
+- AudioContext initialization and sample loading
+- Lookahead scheduler for precise playback timing
+- Sequencer state management (grid, steps, notes)
+- Transport controls: start(), stop(), pause()
+- BPM and step management
 
 **`app/hooks/useTurnManager.ts`**
 Turn-based game logic hook providing:
@@ -65,12 +55,6 @@ Turn-based game logic hook providing:
 - Player alternation (Player 1 ↔ Player 2)
 - Round progression tracking
 - Manual turn controls: `startTurn()`, `endTurn()`, `pauseTurn()`, `resetGame()`
-
-**`app/hooks/useStepCallback.ts`**
-
-- Encapsulates audio step callback logic for syncing audio engine with sequencer
-- Maps instruments to frequencies and durations
-- Triggers synthesized tone playback on active steps
 
 #### UI Components
 
@@ -190,7 +174,6 @@ export default [
 
 - **Composition Pattern**: Grid → InstrumentRow → Step hierarchy allows for flexible layout changes
 - **Extracted Controls**: Turn controls extracted to dedicated `TurnControls` component for reusability
-- **Callback Hook**: Step callback logic encapsulated in `useStepCallback` hook to keep room.tsx clean
 - **Controlled Components**: All UI state is managed by hooks, making components pure and predictable
 - **Tailwind CSS**: Consistent styling using utility classes, responsive design with sm: prefixes
 
