@@ -37,65 +37,56 @@ const createInitialSteps = (
   );
 };
 
-const createSequencerStore = (instruments: Instrument[], steps: number = 16) =>
-  create<SequencerStore>((set) => ({
-    steps: createInitialSteps(instruments, steps),
-    currentStep: 0,
-    isPlaying: false,
-    bpm: 120,
-    instruments,
-    totalSteps: steps,
+export const useSequencerStore = create<SequencerStore>((set) => ({
+  steps: createInitialSteps(DEFAULT_INSTRUMENTS, 16),
+  currentStep: 0,
+  isPlaying: false,
+  bpm: 120,
+  instruments: DEFAULT_INSTRUMENTS,
+  totalSteps: 16,
 
-    setSteps: (steps) => set({ steps }),
-    setCurrentStep: (step) => set({ currentStep: step }),
-    setIsPlaying: (isPlaying) => set({ isPlaying }),
-    setBpm: (bpm) => set({ bpm: Math.max(60, Math.min(180, bpm)) }),
+  setSteps: (steps) => set({ steps }),
+  setCurrentStep: (step) => set({ currentStep: step }),
+  setIsPlaying: (isPlaying) => set({ isPlaying }),
+  setBpm: (bpm) => set({ bpm: Math.max(60, Math.min(180, bpm)) }),
 
-    editStep: (instrumentIndex, stepIndex, updater) =>
-      set((state) => ({
-        steps: state.steps.map((instrumentSteps, i) =>
-          i === instrumentIndex
-            ? instrumentSteps.map((step, j) =>
-                j === stepIndex ? updater(step) : step,
-              )
-            : instrumentSteps,
-        ),
-      })),
+  editStep: (instrumentIndex, stepIndex, updater) =>
+    set((state) => ({
+      steps: state.steps.map((instrumentSteps, i) =>
+        i === instrumentIndex
+          ? instrumentSteps.map((step, j) =>
+              j === stepIndex ? updater(step) : step,
+            )
+          : instrumentSteps,
+      ),
+    })),
 
-    toggleStep: (instrumentIndex, stepIndex) =>
-      set((state) => ({
-        steps: state.steps.map((instrumentSteps, i) =>
-          i === instrumentIndex
-            ? instrumentSteps.map((step, j) =>
-                j === stepIndex ? { ...step, active: !step.active } : step,
-              )
-            : instrumentSteps,
-        ),
-      })),
+  toggleStep: (instrumentIndex, stepIndex) =>
+    set((state) => ({
+      steps: state.steps.map((instrumentSteps, i) =>
+        i === instrumentIndex
+          ? instrumentSteps.map((step, j) =>
+              j === stepIndex ? { ...step, active: !step.active } : step,
+            )
+          : instrumentSteps,
+      ),
+    })),
 
-    setStepVelocity: (instrumentIndex, stepIndex, velocity) =>
-      set((state) => ({
-        steps: state.steps.map((instrumentSteps, i) =>
-          i === instrumentIndex
-            ? instrumentSteps.map((step, j) =>
-                j === stepIndex
-                  ? { ...step, velocity: Math.max(0, Math.min(1, velocity)) }
-                  : step,
-              )
-            : instrumentSteps,
-        ),
-      })),
+  setStepVelocity: (instrumentIndex, stepIndex, velocity) =>
+    set((state) => ({
+      steps: state.steps.map((instrumentSteps, i) =>
+        i === instrumentIndex
+          ? instrumentSteps.map((step, j) =>
+              j === stepIndex
+                ? { ...step, velocity: Math.max(0, Math.min(1, velocity)) }
+                : step,
+            )
+          : instrumentSteps,
+      ),
+    })),
 
-    clearPattern: () =>
-      set((state) => ({
-        steps: createInitialSteps(state.instruments, state.totalSteps),
-      })),
-  }));
-
-// Create a single store instance
-export const sequencerStore = createSequencerStore(DEFAULT_INSTRUMENTS, 16);
-
-// Export typed hook for components - call with selector
-export const useSequencerStore = <T>(
-  selector: (state: SequencerStore) => T,
-): T => sequencerStore(selector);
+  clearPattern: () =>
+    set((state) => ({
+      steps: createInitialSteps(state.instruments, state.totalSteps),
+    })),
+}));

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import { sequencerStore, useSequencerStore } from "~/store/sequencer";
+import { useSequencerStore } from "~/store/sequencer";
 import type { Instrument } from "~/types";
 import { AUDIO_CONFIG, DRUM_SAMPLES } from "~/utils/audio";
 
@@ -95,7 +95,7 @@ export const useAudioSequencer = ({
   const schedule = () => {
     if (!ctx.current) return;
     const c = ctx.current;
-    const state = sequencerStore.getState();
+    const state = useSequencerStore.getState();
 
     const getNotes = (stepIndex: number) =>
       state.steps
@@ -127,10 +127,10 @@ export const useAudioSequencer = ({
 
   // Start playback
   const start = () => {
-    const { isPlaying } = sequencerStore.getState();
+    const { isPlaying } = useSequencerStore.getState();
     if (!ctx.current || isPlaying) return;
     next.current = ctx.current.currentTime;
-    sequencerStore.setState({ isPlaying: true });
+    useSequencerStore.setState({ isPlaying: true });
     sched.current = () => schedule();
     sched.current();
   };
@@ -139,22 +139,22 @@ export const useAudioSequencer = ({
   const stop = () => {
     if (timer.current) clearTimeout(timer.current);
     step.current = 0;
-    sequencerStore.setState({ isPlaying: false, currentStep: 0 });
+    useSequencerStore.setState({ isPlaying: false, currentStep: 0 });
   };
 
   // Pause playback
   const pause = () => {
     if (timer.current) clearTimeout(timer.current);
-    sequencerStore.setState({ isPlaying: false });
+    useSequencerStore.setState({ isPlaying: false });
   };
 
   // Update BPM
   const setBpm = (bpm: number) => {
-    sequencerStore.getState().setBpm(bpm);
+    useSequencerStore.getState().setBpm(bpm);
   };
 
   const setCurrentStep = (step: number) => {
-    sequencerStore.getState().setCurrentStep(step);
+    useSequencerStore.getState().setCurrentStep(step);
   };
 
   const setOnStep = (fn: (step: number) => void) => {
@@ -170,7 +170,6 @@ export const useAudioSequencer = ({
   }, []);
 
   return {
-    store: useSequencerStore,
     init,
     loadSample,
     playSampleAt,

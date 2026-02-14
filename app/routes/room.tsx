@@ -7,7 +7,7 @@ import { Grid } from "~/components/sequencer/Grid";
 import { Transport } from "~/components/sequencer/Transport";
 import { useAudioSequencer } from "~/hooks/useAudioSequencer";
 import { useTurnManager } from "~/hooks/useTurnManager";
-import { sequencerStore, useSequencerStore } from "~/store/sequencer";
+import { useSequencerStore } from "~/store/sequencer";
 import { DEFAULT_INSTRUMENTS } from "~/types";
 
 export function meta({ params }: { params: { roomId: string } }) {
@@ -70,11 +70,11 @@ export default function Room() {
   }
 
   function handleToggleStep(instrumentIndex: number, stepIndex: number) {
-    sequencerStore.getState().toggleStep(instrumentIndex, stepIndex);
+    useSequencerStore.getState().toggleStep(instrumentIndex, stepIndex);
   }
 
   function handleClearPattern() {
-    sequencerStore.getState().clearPattern();
+    useSequencerStore.getState().clearPattern();
   }
 
   return (
