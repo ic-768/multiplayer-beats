@@ -29,7 +29,7 @@ export function useTurnManager({
   });
 
   // Use a ref for the timer ID to avoid stale closure issues in the effect
-  const timerIdRef = useRef<NodeJS.Timeout | null>(null);
+  const timerIdRef = useRef<NodeJS.Timeout>(null);
 
   // Keep a ref to the current player for the interval to access
   const currentPlayerRef = useRef<1 | 2>(1);

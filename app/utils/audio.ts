@@ -6,29 +6,12 @@ export const AUDIO_CONFIG = {
   MAX_BPM: 180,
 } as const;
 
-export const createAudioContext = (): AudioContext => {
-  return new (
-    window.AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext })
-      .webkitAudioContext
-  )();
-};
-
-export const createDrumSound = (
-  ctx: AudioContext,
-  freq: number,
-  dur: number,
-  v: number,
-) => {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const now = ctx.currentTime;
-  osc.frequency.value = freq;
-  osc.type = "sawtooth";
-  gain.gain.setValueAtTime(0, now);
-  gain.gain.linearRampToValueAtTime(v * 0.3, now + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
-  osc.connect(gain).connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + dur);
+export const DRUM_SOUNDS: Record<
+  string,
+  { frequency: number; duration: number }
+> = {
+  kick: { frequency: 60, duration: 0.5 },
+  snare: { frequency: 200, duration: 0.3 },
+  hihat: { frequency: 800, duration: 0.1 },
+  clap: { frequency: 150, duration: 0.2 },
 };

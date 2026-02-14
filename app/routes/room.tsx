@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 
 import { TurnControls } from "~/components/multiplayer/TurnControls";
@@ -7,7 +7,6 @@ import { Grid } from "~/components/sequencer/Grid";
 import { Transport } from "~/components/sequencer/Transport";
 import { useAudioEngine } from "~/hooks/useAudioEngine";
 import { useSequencer } from "~/hooks/useSequencer";
-import { useStepCallback } from "~/hooks/useStepCallback";
 import { useTurnManager } from "~/hooks/useTurnManager";
 import { DEFAULT_INSTRUMENTS } from "~/types";
 
@@ -32,7 +31,21 @@ export default function Room() {
   });
   const turn = useTurnManager({ duration: 60 });
 
-  useStepCallback({ audio, sequencer });
+  // Sync audio engine step with sequencer UI
+  useEffect(() => {
+    audio.setOnStep((step) => {
+      sequencer.setCurrentStep(step);
+    });
+  }, [audio, sequencer]);
+
+  // Keep audio engine's notes callback up to date while playing
+  useEffect(() => {
+    if (audio.isPlaying) {
+      audio.setNotesCallback((step: number) =>
+        sequencer.getActiveNotesForStep(step),
+      );
+    }
+  }, [audio, sequencer, audio.isPlaying, sequencer.getActiveNotesForStep]);
 
   const initAudio = useCallback(async () => {
     if (!audioInitialized) {
@@ -45,7 +58,7 @@ export default function Room() {
     await initAudio();
     audio.setBpm(sequencer.bpm);
     sequencer.setIsPlaying(true);
-    audio.start();
+    audio.start((step) => sequencer.getActiveNotesForStep(step));
   }, [initAudio, audio, sequencer]);
 
   const handlePause = useCallback(() => {
