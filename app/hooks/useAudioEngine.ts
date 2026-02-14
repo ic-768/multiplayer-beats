@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { AUDIO_CONFIG, DRUM_SOUNDS } from "~/utils/audio";
+import { AUDIO_CONFIG, DRUM_SAMPLES, DRUM_SOUNDS } from "~/utils/audio";
 
 type Note = { instrument: { id: string }; velocity: number };
 type NotesFn = (s: number) => Note[];
@@ -47,6 +47,24 @@ export function useAudioEngine() {
     onStepRef.current = fn;
   }, []);
 
+  // Fetch and decode an audio file into a reusable AudioBuffer
+  const loadSample = useCallback(async (name: string, url: string) => {
+    if (!ctx.current) return;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.warn(`Failed to fetch sample ${name}: ${res.status}`);
+        return;
+      }
+      const audioData = await res.arrayBuffer();
+      const buffer = await ctx.current.decodeAudioData(audioData);
+      buf.current.set(name, buffer);
+      console.log(`Loaded sample: ${name}`);
+    } catch (e) {
+      console.error(`Failed to load sample ${name}:`, e);
+    }
+  }, []);
+
   // Initialize the AudioContext (handles Safari's webkitAudioContext prefix).
   // Must be called from a user gesture to satisfy browser autoplay policies.
   const init = useCallback(async () => {
@@ -57,22 +75,17 @@ export function useAudioEngine() {
         .webkitAudioContext;
     ctx.current = new Ctor();
     await ctx.current.resume();
-    setState((p) => ({ ...p, context: ctx.current, isInitialized: true }));
-  }, []);
 
-  // Fetch and decode an audio file into a reusable AudioBuffer
-  const loadSample = useCallback(async (name: string, url: string) => {
-    if (!ctx.current) return;
-    try {
-      const res = await fetch(url);
-      buf.current.set(
-        name,
-        await ctx.current.decodeAudioData(await res.arrayBuffer()),
-      );
-    } catch (e) {
-      console.error(`Failed to load sample ${name}:`, e);
-    }
-  }, []);
+    // Load drum samples
+    await Promise.all([
+      loadSample("kick", DRUM_SAMPLES.kick),
+      loadSample("snare", DRUM_SAMPLES.snare),
+      loadSample("hihat", DRUM_SAMPLES.hihat),
+      loadSample("clap", DRUM_SAMPLES.clap),
+    ]);
+
+    setState((p) => ({ ...p, context: ctx.current, isInitialized: true }));
+  }, [loadSample]);
 
   // Play a pre-loaded sample buffer at a precise Web Audio time with optional velocity
   const playSampleAt = useCallback((name: string, time: number, v = 1) => {
@@ -121,13 +134,18 @@ export function useAudioEngine() {
       while (next.current < c.currentTime + AUDIO_CONFIG.SCHEDULE_AHEAD_TIME) {
         const currentStepVal = step.current;
         if (onStepRef.current) onStepRef.current(currentStepVal);
-        // Trigger a tone for each active note at this step
+        // Trigger a sound for each active note at this step
         getNotes(currentStepVal).forEach(({ instrument, velocity }) => {
-          const s = DRUM_SOUNDS[instrument.id] || {
-            frequency: 440,
-            duration: 0.1,
-          };
-          playToneAt(s.frequency, s.duration, next.current, velocity);
+          // Try to play sample first, fall back to synthesized drum
+          if (buf.current.has(instrument.id)) {
+            playSampleAt(instrument.id, next.current, velocity);
+          } else {
+            const s = DRUM_SOUNDS[instrument.id] || {
+              frequency: 440,
+              duration: 0.1,
+            };
+            playToneAt(s.frequency, s.duration, next.current, velocity);
+          }
         });
         // Advance to the next sixteenth-note
         next.current += 60 / state.bpm / 4;
@@ -136,7 +154,7 @@ export function useAudioEngine() {
       // Re-invoke the scheduler after a short delay
       timer.current = window.setTimeout(sched.current, AUDIO_CONFIG.LOOKAHEAD);
     },
-    [state.bpm, playToneAt],
+    [state.bpm, playToneAt, playSampleAt],
   );
 
   // Start playback from the current audio time, kicking off the scheduler loop
