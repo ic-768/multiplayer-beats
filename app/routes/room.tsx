@@ -5,9 +5,9 @@ import { TurnControls } from "~/components/multiplayer/TurnControls";
 import { TurnTimer } from "~/components/multiplayer/TurnTimer";
 import { Grid } from "~/components/sequencer/Grid";
 import { Transport } from "~/components/sequencer/Transport";
-import { useAudioEngine } from "~/hooks/useAudioEngine";
-import { useSequencer } from "~/hooks/useSequencer";
+import { useAudioSequencer } from "~/hooks/useAudioSequencer";
 import { useTurnManager } from "~/hooks/useTurnManager";
+import { sequencerStore, useSequencerStore } from "~/store/sequencer";
 import { DEFAULT_INSTRUMENTS } from "~/types";
 
 export function meta({ params }: { params: { roomId: string } }) {
@@ -24,57 +24,57 @@ export default function Room() {
 
   const [audioInitialized, setAudioInitialized] = useState(false);
 
-  const audio = useAudioEngine();
-  const sequencer = useSequencer({
-    instruments: DEFAULT_INSTRUMENTS,
-    steps: 16,
-  });
+  const { init, start, stop, pause, setBpm, setOnStep, setCurrentStep } =
+    useAudioSequencer({
+      instruments: DEFAULT_INSTRUMENTS,
+      steps: 16,
+    });
+
+  // Subscribe to store slices
+  const isPlaying = useSequencerStore((s) => s.isPlaying);
+  const bpm = useSequencerStore((s) => s.bpm);
+  const steps = useSequencerStore((s) => s.steps);
+  const instruments = useSequencerStore((s) => s.instruments);
+  const currentStep = useSequencerStore((s) => s.currentStep);
+
   const turn = useTurnManager({ duration: 60 });
 
-  // Sync audio engine step with sequencer UI
   useEffect(() => {
-    audio.setOnStep((step: number) => {
-      sequencer.setCurrentStep(step);
+    setOnStep((step: number) => {
+      setCurrentStep(step);
     });
-  }, [audio, sequencer]);
-
-  // Keep audio engine's notes callback up to date while playing
-  useEffect(() => {
-    if (audio.isPlaying) {
-      audio.setNotesCallback((step: number) =>
-        sequencer.getActiveNotesForStep(step),
-      );
-    }
-  }, [audio, sequencer, audio.isPlaying, sequencer.getActiveNotesForStep]);
+  }, [setOnStep, setCurrentStep]);
 
   async function initAudio() {
     if (!audioInitialized) {
-      await audio.init();
+      await init();
       setAudioInitialized(true);
     }
   }
 
   async function handlePlay() {
     await initAudio();
-    audio.setBpm(sequencer.bpm);
-    sequencer.setIsPlaying(true);
-    audio.start((step: number) => sequencer.getActiveNotesForStep(step));
+    start();
   }
 
   function handlePause() {
-    sequencer.setIsPlaying(false);
-    audio.pause();
+    pause();
   }
 
   function handleStop() {
-    sequencer.setIsPlaying(false);
-    sequencer.setCurrentStep(0);
-    audio.stop();
+    stop();
   }
 
   function handleBpmChange(bpm: number) {
-    sequencer.setBpm(bpm);
-    audio.setBpm(bpm);
+    setBpm(bpm);
+  }
+
+  function handleToggleStep(instrumentIndex: number, stepIndex: number) {
+    sequencerStore.getState().toggleStep(instrumentIndex, stepIndex);
+  }
+
+  function handleClearPattern() {
+    sequencerStore.getState().clearPattern();
   }
 
   return (
@@ -101,20 +101,20 @@ export default function Room() {
         />
 
         <Transport
-          isPlaying={sequencer.isPlaying}
-          bpm={sequencer.bpm}
+          isPlaying={isPlaying}
+          bpm={bpm}
           onPlay={handlePlay}
           onPause={handlePause}
           onStop={handleStop}
           onBpmChange={handleBpmChange}
-          onClear={sequencer.clearPattern}
+          onClear={handleClearPattern}
         />
 
         <Grid
-          instruments={sequencer.instruments}
-          steps={sequencer.steps}
-          currentStep={sequencer.currentStep}
-          onToggleStep={sequencer.toggleStep}
+          instruments={instruments}
+          steps={steps}
+          currentStep={currentStep}
+          onToggleStep={handleToggleStep}
         />
 
         <TurnControls

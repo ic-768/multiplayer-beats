@@ -12,13 +12,3 @@ export const DRUM_SAMPLES: Record<string, string> = {
   hihat: "https://tonejs.github.io/audio/drum-samples/CR78/hihat.mp3",
   clap: "https://raw.githubusercontent.com/cleary/samples-hydrogen-drums/main/h2ogmcp/HandClap.wav",
 };
-
-export const DRUM_SOUNDS: Record<
-  string,
-  { frequency: number; duration: number }
-> = {
-  kick: { frequency: 60, duration: 0.5 },
-  snare: { frequency: 200, duration: 0.3 },
-  hihat: { frequency: 800, duration: 0.1 },
-  clap: { frequency: 150, duration: 0.2 },
-};

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { TurnState } from "~/types";
 
@@ -16,10 +16,10 @@ interface UseTurnManagerOptions {
  * Turn-based game logic hook.
  * Manages the 60-second turn timer, player alternation, and round tracking.
  */
-export function useTurnManager({
+export const useTurnManager = ({
   duration = 60,
   onTurnEnd,
-}: UseTurnManagerOptions = {}) {
+}: UseTurnManagerOptions = {}) => {
   // State for UI rendering
   const [state, setState] = useState<TurnState>({
     currentPlayer: 1,
@@ -29,30 +29,30 @@ export function useTurnManager({
   });
 
   // Use a ref for the timer ID to avoid stale closure issues in the effect
-  const timerIdRef = useRef<NodeJS.Timeout>(null);
+  const timerIdRef = useRef<NodeJS.Timeout | null>(null);
 
   // Keep a ref to the current player for the interval to access
   const currentPlayerRef = useRef<1 | 2>(1);
 
   // Start a new turn - resets timer and activates
-  function startTurn() {
+  const startTurn = useCallback(() => {
     setState((prev) => ({
       ...prev,
       isActive: true,
       timeRemaining: duration,
     }));
-  }
+  }, [duration]);
 
   // Pause the current turn (timer stops but state is preserved)
-  function pauseTurn() {
+  const pauseTurn = useCallback(() => {
     setState((prev) => ({
       ...prev,
       isActive: false,
     }));
-  }
+  }, []);
 
   // End the current turn manually or automatically
-  function endTurn() {
+  const endTurn = useCallback(() => {
     // Clear the timer
     if (timerIdRef.current) {
       clearInterval(timerIdRef.current);
@@ -77,10 +77,10 @@ export function useTurnManager({
         round: nextRound,
       };
     });
-  }
+  }, [duration, onTurnEnd]);
 
   // Reset everything to initial state
-  function resetGame() {
+  const resetGame = useCallback(() => {
     if (timerIdRef.current) {
       clearInterval(timerIdRef.current);
       timerIdRef.current = null;
@@ -92,7 +92,7 @@ export function useTurnManager({
       isActive: false,
       round: 1,
     });
-  }
+  }, [duration]);
 
   // Timer effect - runs when turn is active
   useEffect(() => {
@@ -146,4 +146,4 @@ export function useTurnManager({
     endTurn,
     resetGame,
   };
-}
+};

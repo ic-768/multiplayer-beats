@@ -4,10 +4,6 @@ import { defineConfig } from "vite";
 import babel from "vite-plugin-babel";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-const ReactCompilerConfig = {
-  /* ... */
-};
-
 export default defineConfig({
   plugins: [
     tailwindcss(),
@@ -17,7 +13,7 @@ export default defineConfig({
       filter: /\.[jt]sx?$/,
       babelConfig: {
         presets: ["@babel/preset-typescript"],
-        plugins: [["babel-plugin-react-compiler", ReactCompilerConfig]],
+        plugins: [["babel-plugin-react-compiler"]],
       },
     }),
   ],
