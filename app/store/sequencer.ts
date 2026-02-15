@@ -11,6 +11,7 @@ interface SequencerStore {
   instruments: Instrument[];
   totalSteps: number;
   setSteps: (steps: Step[][]) => void;
+  setStepsFromServer: (steps: boolean[][]) => void;
   setCurrentStep: (step: number) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setBpm: (bpm: number) => void;
@@ -46,6 +47,15 @@ export const useSequencerStore = create<SequencerStore>((set) => ({
   totalSteps: 16,
 
   setSteps: (steps) => set({ steps }),
+  setStepsFromServer: (serverSteps) =>
+    set((state) => ({
+      steps: serverSteps.map((instrumentSteps, i) =>
+        instrumentSteps.map((active) => ({
+          active,
+          velocity: state.steps[i]?.[0]?.velocity ?? 0.8,
+        })),
+      ),
+    })),
   setCurrentStep: (step) => set({ currentStep: step }),
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setBpm: (bpm) => set({ bpm: Math.max(60, Math.min(180, bpm)) }),
