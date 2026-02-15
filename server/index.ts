@@ -17,7 +17,7 @@ import { createServer } from "http";
 import morgan from "morgan";
 import { Server as SocketIOServer } from "socket.io";
 
-import { setupSocketHandlers } from "./socket.js";
+import { setupSocketHandlers } from "./socket/index.js";
 
 const app = express();
 const server = createServer(app);
