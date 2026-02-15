@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 
 import { TurnControls } from "~/components/multiplayer/TurnControls";
