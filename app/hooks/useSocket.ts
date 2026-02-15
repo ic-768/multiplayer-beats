@@ -62,6 +62,14 @@ export const useSocket = ({
       },
     );
     socket.on("room-full", () => onRoomFull?.());
+    socket.on("join-rejected", ({ reason }: { reason: string }) => {
+      if (reason === "name-taken") {
+        alert(
+          "This name is already taken in this room. Please use a different name.",
+        );
+        window.location.href = "/";
+      }
+    });
     socket.on(
       "step-toggled",
       (data: Parameters<NonNullable<typeof onStepToggled>>[0]) =>

@@ -19,6 +19,14 @@ export function setupSocketHandlers(io: Server) {
       const room = getRoom(roomId);
       if (!room) return;
 
+      const existingPlayer = Array.from(room.players.values()).find(
+        (p) => p.name.toLowerCase() === playerName.toLowerCase(),
+      );
+      if (existingPlayer) {
+        socket.emit("join-rejected", { reason: "name-taken" });
+        return;
+      }
+
       if (isRoomFull(room)) {
         socket.emit("room-full");
         return;
