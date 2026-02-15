@@ -1,18 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
-
-export interface RoomState {
-  id: string;
-  steps: boolean[][];
-  bpm: number;
-  turn: {
-    currentPlayer: 1 | 2;
-    timeRemaining: number;
-    isActive: boolean;
-    round: number;
-  };
-  players: Array<{ id: string; name: string; socketId: string }>;
-}
+import type { Player, RoomState, TurnState } from "~/types/socket";
 
 export interface UseSocketOptions {
   roomId: string;
@@ -24,26 +12,15 @@ export interface UseSocketOptions {
     playerId: string;
   }) => void;
   onBpmChanged?: (data: { bpm: number; playerId: string }) => void;
-  onTurnStarted?: (data: {
-    currentPlayer: 1 | 2;
-    timeRemaining: number;
-    round: number;
-  }) => void;
-  onTurnEnded?: (data: {
-    currentPlayer: 1 | 2;
-    timeRemaining: number;
-    round: number;
-  }) => void;
+  onTurnStarted?: (data: TurnState) => void;
+  onTurnEnded?: (data: TurnState) => void;
   onGameReset?: (data: {
     steps: boolean[][];
     bpm: number;
-    turn: RoomState["turn"];
+    turn: TurnState;
   }) => void;
   onPatternCleared?: () => void;
-  onPlayerJoined?: (data: {
-    playerNumber: number;
-    player: { id: string; name: string };
-  }) => void;
+  onPlayerJoined?: (data: { playerNumber: number; player: Player }) => void;
   onPlayerLeft?: (data: { playerId: string }) => void;
   onRoomFull?: () => void;
 }
@@ -75,10 +52,7 @@ export const useSocket = ({
       socket.emit("join-room", { roomId, playerName });
     });
 
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
-
+    socket.on("disconnect", () => setIsConnected(false));
     socket.on(
       "joined-room",
       (data: { playerNumber: number; room: RoomState }) => {
@@ -86,56 +60,55 @@ export const useSocket = ({
         setRoomState(data.room);
       },
     );
+    socket.on("room-full", () => onRoomFull?.());
+    socket.on(
+      "step-toggled",
+      (data: Parameters<NonNullable<typeof onStepToggled>>[0]) =>
+        onStepToggled?.(data),
+    );
+    socket.on(
+      "bpm-changed",
+      (data: Parameters<NonNullable<typeof onBpmChanged>>[0]) =>
+        onBpmChanged?.(data),
+    );
+    socket.on("turn-started", (data: TurnState) => onTurnStarted?.(data));
+    socket.on("turn-ended", (data: TurnState) => onTurnEnded?.(data));
+    socket.on(
+      "game-reset",
+      (data: Parameters<NonNullable<typeof onGameReset>>[0]) =>
+        onGameReset?.(data),
+    );
+    socket.on("pattern-cleared", () => onPatternCleared?.());
 
-    socket.on("room-full", () => {
-      onRoomFull?.();
-    });
+    socket.on(
+      "player-joined",
+      (data: Parameters<NonNullable<typeof onPlayerJoined>>[0]) => {
+        onPlayerJoined?.(data);
+        if (data.player.socketId) {
+          setRoomState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              players: [...prev.players, data.player as Player],
+            };
+          });
+        }
+      },
+    );
 
-    socket.on("step-toggled", (data) => {
-      onStepToggled?.(data);
-    });
-
-    socket.on("bpm-changed", (data) => {
-      onBpmChanged?.(data);
-    });
-
-    socket.on("turn-started", (data) => {
-      onTurnStarted?.(data);
-    });
-
-    socket.on("turn-ended", (data) => {
-      onTurnEnded?.(data);
-    });
-
-    socket.on("game-reset", (data) => {
-      onGameReset?.(data);
-    });
-
-    socket.on("pattern-cleared", () => {
-      onPatternCleared?.();
-    });
-
-    socket.on("player-joined", (data) => {
-      onPlayerJoined?.(data);
-      setRoomState((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          players: [...prev.players, data.player],
-        };
-      });
-    });
-
-    socket.on("player-left", (data) => {
-      onPlayerLeft?.(data);
-      setRoomState((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          players: prev.players.filter((p) => p.id !== data.playerId),
-        };
-      });
-    });
+    socket.on(
+      "player-left",
+      (data: Parameters<NonNullable<typeof onPlayerLeft>>[0]) => {
+        onPlayerLeft?.(data);
+        setRoomState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            players: prev.players.filter((p) => p.id !== data.playerId),
+          };
+        });
+      },
+    );
 
     return () => {
       socket.disconnect();
