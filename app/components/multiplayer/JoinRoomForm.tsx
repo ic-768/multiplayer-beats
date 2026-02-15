@@ -28,7 +28,7 @@ export function JoinRoomForm() {
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           placeholder="Enter your name"
-          className="w-full rounded border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 focus-visible:outline-none"
           required
         />
       </div>
@@ -42,7 +42,7 @@ export function JoinRoomForm() {
           value={roomId}
           onChange={(e) => setRoomId(e.target.value.toUpperCase())}
           placeholder="Enter room code"
-          className="w-full rounded border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-blue-500 focus:outline-none"
+          className="w-full rounded border border-gray-700 bg-gray-800 px-4 py-2 text-white focus:border-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 focus-visible:outline-none"
           required
         />
       </div>

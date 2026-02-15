@@ -39,7 +39,7 @@ export default function Room() {
   const onStepToggled = useCallback(
     (data: { instrumentIndex: number; stepIndex: number }) =>
       store.getState().toggleStep(data.instrumentIndex, data.stepIndex),
-    [],
+    [store],
   );
 
   const onBpmChanged = useCallback(

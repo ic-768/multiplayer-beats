@@ -23,21 +23,21 @@ export function Transport({
         {!isPlaying ? (
           <button
             onClick={onPlay}
-            className="rounded bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-500"
+            className="rounded bg-green-600 px-4 py-2 font-medium text-white transition-colors hover:bg-green-500 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800"
           >
             Play
           </button>
         ) : (
           <button
             onClick={onPause}
-            className="rounded bg-yellow-600 px-4 py-2 font-medium text-white transition-colors hover:bg-yellow-500"
+            className="rounded bg-yellow-600 px-4 py-2 font-medium text-white transition-colors hover:bg-yellow-500 focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800"
           >
             Pause
           </button>
         )}
         <button
           onClick={onStop}
-          className="rounded bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-500"
+          className="rounded bg-red-600 px-4 py-2 font-medium text-white transition-colors hover:bg-red-500 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800"
         >
           Stop
         </button>
@@ -60,7 +60,7 @@ export function Transport({
 
       <button
         onClick={onClear}
-        className="ml-auto rounded bg-gray-600 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-500"
+        className="ml-auto rounded bg-gray-600 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-500 focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800"
       >
         Clear
       </button>

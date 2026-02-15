@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
+
 import type { Player, RoomState, TurnState } from "~/types/socket";
 
 export interface UseSocketOptions {
