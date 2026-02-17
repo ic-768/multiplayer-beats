@@ -38,6 +38,7 @@ export function setupSocketHandlers(io: Server) {
         id: socket.id,
         name: playerName,
         socketId: socket.id,
+        playerNumber: playerNum as 1 | 2,
       });
 
       socket.emit("joined-room", {
@@ -69,6 +70,20 @@ export function setupSocketHandlers(io: Server) {
         const { roomId, instrumentIndex, stepIndex } = data;
         const room = rooms.get(roomId);
         if (!room) return;
+
+        const player = room.players.get(socket.id);
+        if (!player) return;
+
+        if (
+          room.turn.isActive &&
+          player.playerNumber !== room.turn.currentPlayer
+        ) {
+          socket.emit("not-your-turn", {
+            currentPlayer: room.turn.currentPlayer,
+            yourPlayer: player.playerNumber,
+          });
+          return;
+        }
 
         room.steps[instrumentIndex][stepIndex] =
           !room.steps[instrumentIndex][stepIndex];

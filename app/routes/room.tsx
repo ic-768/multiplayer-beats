@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router";
 
 import { TurnControls } from "~/components/multiplayer/TurnControls";
@@ -62,9 +62,34 @@ export default function Room() {
 
   const onRoomFull = useCallback(() => setRoomFull(true), []);
 
-  const onTurnStarted = useCallback(() => {}, []);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const setTurnTimeRemainingRef = useRef<
+    ((timeRemaining: number) => void) | null
+  >(null);
+  const timeRemainingRef = useRef<number>(60);
 
-  const onTurnEnded = useCallback(() => {}, []);
+  const onTurnStarted = useCallback((data: { timeRemaining: number }) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timeRemainingRef.current = data.timeRemaining;
+    timerRef.current = setInterval(() => {
+      const setTurnTimeRemaining = setTurnTimeRemainingRef.current;
+      if (setTurnTimeRemaining) {
+        timeRemainingRef.current -= 1;
+        setTurnTimeRemaining(timeRemainingRef.current);
+        if (timeRemainingRef.current <= 0 && timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+      }
+    }, 1000);
+  }, []);
+
+  const onTurnEnded = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 
   const socket = useSocket({
     roomId: roomId || "",
@@ -79,6 +104,10 @@ export default function Room() {
   });
 
   useEffect(() => {
+    setTurnTimeRemainingRef.current = socket.setTurnTimeRemaining;
+  }, [socket.setTurnTimeRemaining]);
+
+  useEffect(() => {
     setOnStep((step: number) => setCurrentStep(step));
   }, [setOnStep, setCurrentStep]);
 
@@ -88,6 +117,14 @@ export default function Room() {
       setBpmStore(socket.roomState.bpm);
     }
   }, [socket.roomState, setStepsFromServer, setBpmStore]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   const initAudio = async () => {
     if (!audioInitialized) {
@@ -108,9 +145,14 @@ export default function Room() {
   };
 
   const handleToggleStep = (instrumentIndex: number, stepIndex: number) => {
+    if (!isMyTurn) return;
     store.getState().toggleStep(instrumentIndex, stepIndex);
     socket.toggleStep(instrumentIndex, stepIndex);
   };
+
+  const isMyTurn =
+    socket.roomState?.turn.isActive &&
+    socket.roomState.turn.currentPlayer === socket.playerNumber;
 
   const handleClearPattern = () => {
     clearPatternStore();
@@ -176,10 +218,14 @@ export default function Room() {
           steps={steps}
           currentStep={currentStep}
           onToggleStep={handleToggleStep}
+          disabled={!isMyTurn}
         />
 
         <TurnControls
           isActive={socket.roomState?.turn.isActive ?? false}
+          isCurrentPlayer={
+            socket.roomState?.turn.currentPlayer === socket.playerNumber
+          }
           onStart={socket.startTurn}
           onEnd={socket.endTurn}
           onReset={socket.resetGame}

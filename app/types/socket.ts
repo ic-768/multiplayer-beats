@@ -9,6 +9,7 @@ export interface Player {
   id: string;
   name: string;
   socketId: string;
+  playerNumber: 1 | 2;
 }
 
 export interface RoomState {

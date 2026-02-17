@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useRef,
+  useState,
+} from "react";
 import { io, Socket } from "socket.io-client";
 
 import type { Player, RoomState, TurnState } from "~/types/socket";
@@ -44,6 +50,68 @@ export const useSocket = ({
   const [roomState, setRoomState] = useState<RoomState | null>(null);
   const [playerNumber, setPlayerNumber] = useState<number | null>(null);
 
+  const handleStepToggled = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onStepToggled>>[0]) => {
+      onStepToggled?.(data);
+    },
+  );
+
+  const handleBpmChanged = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onBpmChanged>>[0]) => {
+      onBpmChanged?.(data);
+    },
+  );
+
+  const handleTurnStarted = useEffectEvent((data: TurnState) => {
+    onTurnStarted?.(data);
+  });
+
+  const handleTurnEnded = useEffectEvent((data: TurnState) => {
+    onTurnEnded?.(data);
+  });
+
+  const handleGameReset = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onGameReset>>[0]) => {
+      onGameReset?.(data);
+    },
+  );
+
+  const handlePatternCleared = useEffectEvent(() => {
+    onPatternCleared?.();
+  });
+
+  const handlePlayerJoined = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onPlayerJoined>>[0]) => {
+      onPlayerJoined?.(data);
+      if (data.player.socketId) {
+        setRoomState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            players: [...prev.players, data.player as Player],
+          };
+        });
+      }
+    },
+  );
+
+  const handlePlayerLeft = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onPlayerLeft>>[0]) => {
+      onPlayerLeft?.(data);
+      setRoomState((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          players: prev.players.filter((p) => p.id !== data.playerId),
+        };
+      });
+    },
+  );
+
+  const handleRoomFull = useEffectEvent(() => {
+    onRoomFull?.();
+  });
+
   useEffect(() => {
     const socket = io();
     socketRef.current = socket;
@@ -61,7 +129,7 @@ export const useSocket = ({
         setRoomState(data.room);
       },
     );
-    socket.on("room-full", () => onRoomFull?.());
+    socket.on("room-full", () => handleRoomFull());
     socket.on("join-rejected", ({ reason }: { reason: string }) => {
       if (reason === "name-taken") {
         alert(
@@ -73,68 +141,40 @@ export const useSocket = ({
     socket.on(
       "step-toggled",
       (data: Parameters<NonNullable<typeof onStepToggled>>[0]) =>
-        onStepToggled?.(data),
+        handleStepToggled(data),
     );
     socket.on(
       "bpm-changed",
       (data: Parameters<NonNullable<typeof onBpmChanged>>[0]) =>
-        onBpmChanged?.(data),
+        handleBpmChanged(data),
     );
-    socket.on("turn-started", (data: TurnState) => onTurnStarted?.(data));
-    socket.on("turn-ended", (data: TurnState) => onTurnEnded?.(data));
+    socket.on("turn-started", (data: TurnState) => handleTurnStarted(data));
+    socket.on("turn-ended", (data: TurnState) => handleTurnEnded(data));
     socket.on(
       "game-reset",
       (data: Parameters<NonNullable<typeof onGameReset>>[0]) =>
-        onGameReset?.(data),
+        handleGameReset(data),
     );
-    socket.on("pattern-cleared", () => onPatternCleared?.());
+    socket.on("pattern-cleared", () => handlePatternCleared());
 
     socket.on(
       "player-joined",
       (data: Parameters<NonNullable<typeof onPlayerJoined>>[0]) => {
-        onPlayerJoined?.(data);
-        if (data.player.socketId) {
-          setRoomState((prev) => {
-            if (!prev) return prev;
-            return {
-              ...prev,
-              players: [...prev.players, data.player as Player],
-            };
-          });
-        }
+        handlePlayerJoined(data);
       },
     );
 
     socket.on(
       "player-left",
       (data: Parameters<NonNullable<typeof onPlayerLeft>>[0]) => {
-        onPlayerLeft?.(data);
-        setRoomState((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            players: prev.players.filter((p) => p.id !== data.playerId),
-          };
-        });
+        handlePlayerLeft(data);
       },
     );
 
     return () => {
       socket.disconnect();
     };
-  }, [
-    roomId,
-    playerName,
-    onStepToggled,
-    onBpmChanged,
-    onTurnStarted,
-    onTurnEnded,
-    onGameReset,
-    onPatternCleared,
-    onPlayerJoined,
-    onPlayerLeft,
-    onRoomFull,
-  ]);
+  }, [roomId, playerName]);
 
   const toggleStep = useCallback(
     (instrumentIndex: number, stepIndex: number) => {
@@ -170,6 +210,16 @@ export const useSocket = ({
     socketRef.current?.emit("clear-pattern", { roomId });
   }, [roomId]);
 
+  const setTurnTimeRemaining = useCallback((timeRemaining: number) => {
+    setRoomState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        turn: { ...prev.turn, timeRemaining },
+      };
+    });
+  }, []);
+
   return {
     isConnected,
     roomState,
@@ -180,5 +230,6 @@ export const useSocket = ({
     endTurn,
     resetGame,
     clearPattern,
+    setTurnTimeRemaining,
   };
 };

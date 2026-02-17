@@ -1,5 +1,6 @@
 interface TurnControlsProps {
   isActive: boolean;
+  isCurrentPlayer: boolean;
   onStart: () => void;
   onEnd: () => void;
   onReset: () => void;
@@ -7,6 +8,7 @@ interface TurnControlsProps {
 
 export function TurnControls({
   isActive,
+  isCurrentPlayer,
   onStart,
   onEnd,
   onReset,
@@ -16,14 +18,16 @@ export function TurnControls({
       {!isActive ? (
         <button
           onClick={onStart}
-          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-500"
+          disabled={!isCurrentPlayer}
+          className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Start Turn
         </button>
       ) : (
         <button
           onClick={onEnd}
-          className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-500"
+          disabled={!isCurrentPlayer}
+          className="rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           End Turn Early
         </button>

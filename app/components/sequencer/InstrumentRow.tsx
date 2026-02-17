@@ -7,6 +7,7 @@ interface InstrumentRowProps {
   steps: Step[];
   currentStep: number;
   onToggleStep: (stepIndex: number) => void;
+  disabled?: boolean;
 }
 
 export function InstrumentRow({
@@ -14,6 +15,7 @@ export function InstrumentRow({
   steps,
   currentStep,
   onToggleStep,
+  disabled = false,
 }: InstrumentRowProps) {
   return (
     <div className="flex items-center gap-1 sm:gap-2">
@@ -31,6 +33,7 @@ export function InstrumentRow({
             isCurrentStep={currentStep === index}
             instrumentColor={instrument.color}
             onClick={() => onToggleStep(index)}
+            disabled={disabled}
           />
         ))}
       </div>
