@@ -138,6 +138,7 @@ export function setupSocketHandlers(io: Server) {
         currentPlayer: room.turn.currentPlayer,
         timeRemaining: room.turn.timeRemaining,
         round: room.turn.round,
+        isActive: room.turn.isActive,
       });
     });
 
