@@ -46,6 +46,7 @@ export function setupSocketHandlers(io: Server) {
         room: {
           id: room.id,
           steps: room.steps,
+          pianoSteps: Array.from(room.pianoSteps.entries()),
           bpm: room.bpm,
           turn: room.turn,
           players: Array.from(room.players.values()),
@@ -148,6 +149,7 @@ export function setupSocketHandlers(io: Server) {
       if (!room) return;
 
       room.steps = createEmptySteps();
+      room.pianoSteps = new Map();
       room.turn = {
         currentPlayer: 1,
         timeRemaining: TURN_DURATION,
@@ -157,6 +159,7 @@ export function setupSocketHandlers(io: Server) {
 
       io.to(roomId).emit("game-reset", {
         steps: room.steps,
+        pianoSteps: Array.from(room.pianoSteps.entries()),
         bpm: room.bpm,
         turn: room.turn,
       });
@@ -168,8 +171,52 @@ export function setupSocketHandlers(io: Server) {
       if (!room) return;
 
       room.steps = createEmptySteps();
+      room.pianoSteps = new Map();
       io.to(roomId).emit("pattern-cleared");
     });
+
+    socket.on(
+      "toggle-piano-note",
+      (data: { roomId: string; stepIndex: number; noteIndex: number }) => {
+        const { roomId, stepIndex, noteIndex } = data;
+        const room = rooms.get(roomId);
+        if (!room) return;
+
+        const player = room.players.get(socket.id);
+        if (!player) return;
+
+        if (
+          room.turn.isActive &&
+          player.playerNumber !== room.turn.currentPlayer
+        ) {
+          socket.emit("not-your-turn", {
+            currentPlayer: room.turn.currentPlayer,
+            yourPlayer: player.playerNumber,
+          });
+          return;
+        }
+
+        const stepNotes = new Set(room.pianoSteps.get(stepIndex) || []);
+        if (stepNotes.has(noteIndex)) {
+          stepNotes.delete(noteIndex);
+          if (stepNotes.size === 0) {
+            room.pianoSteps.delete(stepIndex);
+          } else {
+            room.pianoSteps.set(stepIndex, stepNotes);
+          }
+        } else {
+          stepNotes.add(noteIndex);
+          room.pianoSteps.set(stepIndex, stepNotes);
+        }
+
+        socket.to(roomId).emit("piano-note-toggled", {
+          stepIndex,
+          noteIndex,
+          active: stepNotes.has(noteIndex),
+          playerId: socket.id,
+        });
+      },
+    );
 
     socket.on("disconnect", () => {
       console.log(`Client disconnected: ${socket.id}`);

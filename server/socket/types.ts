@@ -16,6 +16,7 @@ export interface Room {
   id: string;
   players: Map<string, Player>;
   steps: boolean[][];
+  pianoSteps: Map<number, Set<number>>;
   bpm: number;
   turn: TurnState;
 }

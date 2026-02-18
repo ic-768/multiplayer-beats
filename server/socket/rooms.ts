@@ -13,6 +13,7 @@ export function getRoom(roomId: string): Room | undefined {
       id: roomId,
       players: new Map(),
       steps: createEmptySteps(),
+      pianoSteps: new Map(),
       bpm: DEFAULT_BPM,
       turn: {
         currentPlayer: 1,

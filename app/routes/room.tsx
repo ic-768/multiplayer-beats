@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from "react-router";
 import { TurnControls } from "~/components/multiplayer/TurnControls";
 import { TurnTimer } from "~/components/multiplayer/TurnTimer";
 import { Grid } from "~/components/sequencer/Grid";
+import { PianoRoll } from "~/components/sequencer/PianoRoll";
 import { Transport } from "~/components/sequencer/Transport";
 import { useAudioSequencer } from "~/hooks/useAudioSequencer";
 import { useSocket } from "~/hooks/useSocket";
@@ -35,6 +36,9 @@ export default function Room() {
   const setStepsFromServer = store((s) => s.setStepsFromServer);
   const setBpmStore = store((s) => s.setBpm);
   const clearPatternStore = store((s) => s.clearPattern);
+  const pianoSteps = store((s) => s.pianoSteps);
+  const togglePianoNote = store((s) => s.togglePianoNote);
+  const setPianoStepsFromServer = store((s) => s.setPianoStepsFromServer);
 
   const onStepToggled = useCallback(
     (data: { instrumentIndex: number; stepIndex: number; active: boolean }) =>
@@ -47,17 +51,29 @@ export default function Room() {
     [store],
   );
 
+  const onPianoNoteToggled = useCallback(
+    (data: { stepIndex: number; noteIndex: number; active: boolean }) => {
+      store.getState().togglePianoNote(data.stepIndex, data.noteIndex);
+    },
+    [],
+  );
+
   const onBpmChanged = useCallback(
     (data: { bpm: number }) => setBpmStore(data.bpm),
     [setBpmStore],
   );
 
   const onGameReset = useCallback(
-    (data: { steps: boolean[][]; bpm: number }) => {
+    (data: {
+      steps: boolean[][];
+      pianoSteps: [number, number[]][];
+      bpm: number;
+    }) => {
       setStepsFromServer(data.steps);
+      setPianoStepsFromServer(new Map(data.pianoSteps));
       setBpmStore(data.bpm);
     },
-    [setStepsFromServer, setBpmStore],
+    [setStepsFromServer, setPianoStepsFromServer, setBpmStore],
   );
 
   const onPatternCleared = useCallback(
@@ -100,6 +116,7 @@ export default function Room() {
     roomId: roomId || "",
     playerName,
     onStepToggled,
+    onPianoNoteToggled,
     onBpmChanged,
     onTurnStarted,
     onTurnEnded,
@@ -120,13 +137,18 @@ export default function Room() {
     if (socket.roomState?.steps) {
       setStepsFromServer(socket.roomState.steps);
     }
+    if (socket.roomState?.pianoSteps) {
+      setPianoStepsFromServer(new Map(socket.roomState.pianoSteps));
+    }
     if (socket.roomState?.bpm) {
       setBpmStore(socket.roomState.bpm);
     }
   }, [
     socket.roomState?.steps,
+    socket.roomState?.pianoSteps,
     socket.roomState?.bpm,
     setStepsFromServer,
+    setPianoStepsFromServer,
     setBpmStore,
   ]);
 
@@ -160,6 +182,12 @@ export default function Room() {
     if (!isMyTurn) return;
     store.getState().toggleStep(instrumentIndex, stepIndex);
     socket.toggleStep(instrumentIndex, stepIndex);
+  };
+
+  const handleTogglePianoNote = (stepIndex: number, noteIndex: number) => {
+    if (!isMyTurn) return;
+    store.getState().togglePianoNote(stepIndex, noteIndex);
+    socket.togglePianoNote(stepIndex, noteIndex);
   };
 
   const isMyTurn =
@@ -233,6 +261,13 @@ export default function Room() {
           disabled={!isMyTurn}
         />
 
+        <PianoRoll
+          pianoSteps={pianoSteps}
+          currentStep={currentStep}
+          onToggleNote={handleTogglePianoNote}
+          disabled={!isMyTurn}
+        />
+
         <TurnControls
           isActive={socket.roomState?.turn.isActive ?? false}
           isCurrentPlayer={
@@ -246,7 +281,8 @@ export default function Room() {
         <div className="rounded-lg bg-gray-900 p-4 text-sm text-gray-400">
           <p className="mb-2 font-medium text-white">How to play:</p>
           <ul className="list-inside list-disc space-y-1">
-            <li>Click on the grid to add drum hits</li>
+            <li>Click on the drum grid to add percussion hits</li>
+            <li>Use the piano roll to add melodic notes</li>
             <li>Press Play to hear your beat</li>
             <li>Use Start Turn to begin your 60-second turn</li>
             <li>Add as many notes as you can before time runs out!</li>

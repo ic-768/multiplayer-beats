@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import type { Instrument, Step } from "~/types";
-import { DEFAULT_INSTRUMENTS } from "~/types";
+import { DEFAULT_INSTRUMENTS, PIANO_NOTES } from "~/types";
 
 interface SequencerStore {
   steps: Step[][];
@@ -10,6 +10,7 @@ interface SequencerStore {
   bpm: number;
   instruments: Instrument[];
   totalSteps: number;
+  pianoSteps: Map<number, Set<number>>;
   setSteps: (steps: Step[][]) => void;
   setStepsFromServer: (steps: boolean[][]) => void;
   setCurrentStep: (step: number) => void;
@@ -26,6 +27,8 @@ interface SequencerStore {
     stepIndex: number,
     velocity: number,
   ) => void;
+  togglePianoNote: (stepIndex: number, noteIndex: number) => void;
+  setPianoStepsFromServer: (pianoSteps: Map<number, number[]>) => void;
   clearPattern: () => void;
 }
 
@@ -45,6 +48,7 @@ export const useSequencerStore = create<SequencerStore>((set) => ({
   bpm: 120,
   instruments: DEFAULT_INSTRUMENTS,
   totalSteps: 16,
+  pianoSteps: new Map(),
 
   setSteps: (steps) => set({ steps }),
   setStepsFromServer: (serverSteps) =>
@@ -98,5 +102,32 @@ export const useSequencerStore = create<SequencerStore>((set) => ({
   clearPattern: () =>
     set((state) => ({
       steps: createInitialSteps(state.instruments, state.totalSteps),
+      pianoSteps: new Map(),
     })),
+
+  togglePianoNote: (stepIndex, noteIndex) =>
+    set((state) => {
+      const newPianoSteps = new Map(state.pianoSteps);
+      const stepNotes = new Set(newPianoSteps.get(stepIndex) || []);
+      if (stepNotes.has(noteIndex)) {
+        stepNotes.delete(noteIndex);
+      } else {
+        stepNotes.add(noteIndex);
+      }
+      if (stepNotes.size === 0) {
+        newPianoSteps.delete(stepIndex);
+      } else {
+        newPianoSteps.set(stepIndex, stepNotes);
+      }
+      return { pianoSteps: newPianoSteps };
+    }),
+
+  setPianoStepsFromServer: (pianoSteps) =>
+    set(() => {
+      const newMap = new Map<number, Set<number>>();
+      pianoSteps.forEach((noteIndices, stepIndex) => {
+        newMap.set(stepIndex, new Set(noteIndices));
+      });
+      return { pianoSteps: newMap };
+    }),
 }));

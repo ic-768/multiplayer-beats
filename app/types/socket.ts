@@ -15,6 +15,7 @@ export interface Player {
 export interface RoomState {
   id: string;
   steps: boolean[][];
+  pianoSteps: [number, number[]][];
   bpm: number;
   turn: TurnState;
   players: Player[];

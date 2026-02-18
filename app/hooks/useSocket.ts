@@ -18,11 +18,18 @@ export interface UseSocketOptions {
     active: boolean;
     playerId: string;
   }) => void;
+  onPianoNoteToggled?: (data: {
+    stepIndex: number;
+    noteIndex: number;
+    active: boolean;
+    playerId: string;
+  }) => void;
   onBpmChanged?: (data: { bpm: number; playerId: string }) => void;
   onTurnStarted?: (data: TurnState) => void;
   onTurnEnded?: (data: TurnState) => void;
   onGameReset?: (data: {
     steps: boolean[][];
+    pianoSteps: [number, number[]][];
     bpm: number;
     turn: TurnState;
   }) => void;
@@ -36,6 +43,7 @@ export const useSocket = ({
   roomId,
   playerName,
   onStepToggled,
+  onPianoNoteToggled,
   onBpmChanged,
   onTurnStarted,
   onTurnEnded,
@@ -53,6 +61,12 @@ export const useSocket = ({
   const handleStepToggled = useEffectEvent(
     (data: Parameters<NonNullable<typeof onStepToggled>>[0]) => {
       onStepToggled?.(data);
+    },
+  );
+
+  const handlePianoNoteToggled = useEffectEvent(
+    (data: Parameters<NonNullable<typeof onPianoNoteToggled>>[0]) => {
+      onPianoNoteToggled?.(data);
     },
   );
 
@@ -158,6 +172,11 @@ export const useSocket = ({
         handleStepToggled(data),
     );
     socket.on(
+      "piano-note-toggled",
+      (data: Parameters<NonNullable<typeof onPianoNoteToggled>>[0]) =>
+        handlePianoNoteToggled(data),
+    );
+    socket.on(
       "bpm-changed",
       (data: Parameters<NonNullable<typeof onBpmChanged>>[0]) =>
         handleBpmChanged(data),
@@ -201,6 +220,17 @@ export const useSocket = ({
     [roomId],
   );
 
+  const togglePianoNote = useCallback(
+    (stepIndex: number, noteIndex: number) => {
+      socketRef.current?.emit("toggle-piano-note", {
+        roomId,
+        stepIndex,
+        noteIndex,
+      });
+    },
+    [roomId],
+  );
+
   const setBpm = useCallback(
     (bpm: number) => {
       socketRef.current?.emit("set-bpm", { roomId, bpm });
@@ -239,6 +269,7 @@ export const useSocket = ({
     roomState,
     playerNumber,
     toggleStep,
+    togglePianoNote,
     setBpm,
     startTurn,
     endTurn,
