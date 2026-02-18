@@ -49,6 +49,7 @@ This separation allows:
   - Current BPM
   - Turn state (current player, time remaining, round)
   - Connected players
+- Server enforces turn rules - players can only toggle steps during their turn
 
 ### Events
 
@@ -56,9 +57,12 @@ This separation allows:
 | ----------------- | --------------- | ------------------------------------- |
 | `join-room`       | Client → Server | Player joins a room                   |
 | `joined-room`     | Server → Client | Room state sent to joining player     |
+| `join-rejected`   | Server → Client | Name already taken in room            |
 | `player-joined`   | Server → Client | Notify existing players of new player |
+| `room-full`       | Server → Client | Room already has 2 players            |
 | `toggle-step`     | Client → Server | Player toggles a step                 |
 | `step-toggled`    | Server → Client | Broadcast step change                 |
+| `not-your-turn`   | Server → Client | Step toggle rejected (not your turn)  |
 | `set-bpm`         | Client → Server | Player changes BPM                    |
 | `bpm-changed`     | Server → Client | Broadcast BPM change                  |
 | `start-turn`      | Client → Server | Start a new turn                      |
@@ -71,7 +75,6 @@ This separation allows:
 | `pattern-cleared` | Server → Client | Broadcast pattern clear               |
 | `disconnect`      | Client → Server | Player disconnects                    |
 | `player-left`     | Server → Client | Notify remaining players              |
-| `room-full`       | Server → Client | Room already has 2 players            |
 
 ## Client Integration
 
@@ -83,6 +86,7 @@ The `useSocket` hook (`app/hooks/useSocket.ts`) manages:
 - Room state synchronization
 - Event handlers for all server events
 - Emit functions for client actions
+- Local turn timer synchronization via `setTurnTimeRemaining`
 
 ### Room Page Integration
 
@@ -98,8 +102,12 @@ The room page (`app/routes/room.tsx`) uses the socket hook to:
 ### New Files
 
 - `server/index.ts` - Production Express server with Socket.IO
-- `server/socket.ts` - Socket.IO event handlers and room logic
+- `server/socket/index.ts` - Socket.IO exports
+- `server/socket/handlers.ts` - Socket.IO event handlers
+- `server/socket/rooms.ts` - Room management logic
+- `server/socket/types.ts` - Server-side socket types
 - `app/hooks/useSocket.ts` - Client-side socket management hook
+- `app/types/socket.ts` - Client-side socket types
 
 ### Modified Files
 
@@ -145,5 +153,4 @@ The production server runs on port 3000.
 - Room state is not persisted (in-memory only)
 - No authentication or room passwords
 - No reconnection handling (page refresh resets connection)
-- Turn timer runs on server but clients manage their own display
 - CORS allows all origins (should be restricted in production)
