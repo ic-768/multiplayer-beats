@@ -37,8 +37,13 @@ export default function Room() {
   const clearPatternStore = store((s) => s.clearPattern);
 
   const onStepToggled = useCallback(
-    (data: { instrumentIndex: number; stepIndex: number }) =>
-      store.getState().toggleStep(data.instrumentIndex, data.stepIndex),
+    (data: { instrumentIndex: number; stepIndex: number; active: boolean }) =>
+      store
+        .getState()
+        .editStep(data.instrumentIndex, data.stepIndex, (step) => ({
+          ...step,
+          active: data.active,
+        })),
     [store],
   );
 
@@ -112,11 +117,18 @@ export default function Room() {
   }, [setOnStep, setCurrentStep]);
 
   useEffect(() => {
-    if (socket.roomState) {
+    if (socket.roomState?.steps) {
       setStepsFromServer(socket.roomState.steps);
+    }
+    if (socket.roomState?.bpm) {
       setBpmStore(socket.roomState.bpm);
     }
-  }, [socket.roomState, setStepsFromServer, setBpmStore]);
+  }, [
+    socket.roomState?.steps,
+    socket.roomState?.bpm,
+    setStepsFromServer,
+    setBpmStore,
+  ]);
 
   useEffect(() => {
     return () => {

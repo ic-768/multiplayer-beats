@@ -64,10 +64,24 @@ export const useSocket = ({
 
   const handleTurnStarted = useEffectEvent((data: TurnState) => {
     onTurnStarted?.(data);
+    setRoomState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        turn: { ...prev.turn, ...data },
+      };
+    });
   });
 
   const handleTurnEnded = useEffectEvent((data: TurnState) => {
     onTurnEnded?.(data);
+    setRoomState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        turn: { ...prev.turn, ...data },
+      };
+    });
   });
 
   const handleGameReset = useEffectEvent(

@@ -117,6 +117,7 @@ export function setupSocketHandlers(io: Server) {
       io.to(roomId).emit("turn-started", {
         currentPlayer: room.turn.currentPlayer,
         timeRemaining: room.turn.timeRemaining,
+        isActive: room.turn.isActive,
         round: room.turn.round,
       });
     });
